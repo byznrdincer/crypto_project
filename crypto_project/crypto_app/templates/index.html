@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İstemci - Mesaj Şifreleme</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+
+<body class="bg-light">
+  <div class="container py-5 text-center">
+    <h2 class="mb-4 text-primary">🔐 İstemci - Mesaj Şifreleme</h2>
+    
+    <form id="encryptForm" class="card p-4 shadow-sm">
+      <div class="mb-3">
+        <label>Şifreleme Yöntemi</label>
+        <select class="form-select">
+          <option>Caesar Cipher (Kaydırma)</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label>Anahtar (Kaydırma Sayısı)</label>
+        <input type="number" name="key" class="form-control" value="3">
+      </div>
+
+      <div class="mb-3">
+        <label>Mesaj</label>
+        <textarea name="message" class="form-control" placeholder="Şifrelenecek mesajınızı buraya yazın..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">Şifrele</button>
+    </form>
+
+    <div class="mt-4">
+      <h5>🔒 Şifreli Mesaj:</h5>
+      <p id="result" class="fw-bold"></p>
+    </div>
+  </div>
+
+<script>
+document.getElementById("encryptForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const res = await fetch("/encrypt/", { method: "POST", body: formData });
+  const data = await res.json();
+  document.getElementById("result").innerText = data.result;
+};
+</script>
+</body>
+</html>
