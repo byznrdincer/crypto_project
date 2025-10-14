@@ -3,58 +3,109 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>İstemci - Mesaj Şifreleme</title>
+  <title>🔐 Mesaj Şifreleme İstemcisi</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 
 <body class="bg-light">
   <div class="container py-5 text-center">
-    <h2 class="mb-4 text-primary">🔐 İstemci - Mesaj Şifreleme</h2>
+    <h2 class="mb-4 text-primary">🔐 Mesaj Şifreleme Uygulaması</h2>
     
     <form id="encryptForm" class="card p-4 shadow-sm">
+      <!-- Şifreleme Yöntemi -->
       <div class="mb-3">
-        <label>Şifreleme Yöntemi</label>
-        <select class="form-select" name="method">
+        <label class="form-label">Şifreleme Yöntemi</label>
+        <select class="form-select" name="method" id="methodSelect">
           <option value="caesar">Caesar Cipher (Kaydırma)</option>
           <option value="vigenere">Vigenère Cipher (Anahtar Kelimeli)</option>
+          <option value="affine">Affine Cipher (a, b Anahtarları)</option>
+          <option value="substitution">Substitution Cipher (Alfabe Eşlemesi)</option>
+          <option value="railfence">Rail Fence Cipher (Ray Sayısı)</option>
         </select>
       </div>
 
-      <div class="mb-3">
-        <label>Anahtar (Kaydırma Sayısı / Anahtar Kelime)</label>
-        <input type="text" name="key" class="form-control" value="3">
+      <!-- Anahtar Alanı -->
+      <div id="keyFields">
+        <div class="mb-3" id="keySingle">
+          <label class="form-label">Anahtar / Kaydırma Sayısı</label>
+          <input type="text" name="key" class="form-control" value="3">
+        </div>
+
+        <div class="row" id="keyAffine" style="display:none;">
+          <div class="col">
+            <label class="form-label">a Değeri</label>
+            <input type="number" name="a" class="form-control" value="5">
+          </div>
+          <div class="col">
+            <label class="form-label">b Değeri</label>
+            <input type="number" name="b" class="form-control" value="8">
+          </div>
+        </div>
+
+        <div class="mb-3" id="keySubstitution" style="display:none;">
+          <label class="form-label">Alfabe Anahtarı (26 Harf)</label>
+          <input type="text" name="keySub" class="form-control" value="QWERTYUIOPASDFGHJKLZXCVBNM">
+        </div>
       </div>
 
+      <!-- Mesaj -->
       <div class="mb-3">
-        <label>Mesaj</label>
-        <textarea name="message" class="form-control" placeholder="Şifrelenecek mesajınızı buraya yazın..."></textarea>
+        <label class="form-label">Mesaj</label>
+        <textarea name="message" class="form-control" rows="3" placeholder="Şifrelenecek mesajınızı yazın..."></textarea>
       </div>
 
-      <button type="submit" class="btn btn-primary w-100">Şifrele</button>
+      <button type="submit" class="btn btn-primary w-100">🔒 Şifrele</button>
     </form>
 
     <div class="mt-4">
-      <h5>🔒 Şifreli Mesaj:</h5>
-      <p id="result" class="fw-bold"></p>
+      <h5>🧩 Şifreli Mesaj:</h5>
+      <p id="result" class="fw-bold text-success"></p>
     </div>
   </div>
 
 <script>
+const methodSelect = document.getElementById("methodSelect");
+const keySingle = document.getElementById("keySingle");
+const keyAffine = document.getElementById("keyAffine");
+const keySubstitution = document.getElementById("keySubstitution");
+
+// 🔄 Seçilen metoda göre form alanlarını göster/gizle
+methodSelect.onchange = () => {
+  keySingle.style.display = "none";
+  keyAffine.style.display = "none";
+  keySubstitution.style.display = "none";
+
+  const method = methodSelect.value;
+  if (method === "caesar" || method === "vigenere" || method === "railfence") {
+    keySingle.style.display = "block";
+  } else if (method === "affine") {
+    keyAffine.style.display = "flex";
+  } else if (method === "substitution") {
+    keySubstitution.style.display = "block";
+  }
+};
+
+// 🧩 Form gönderimi
 document.getElementById("encryptForm").onsubmit = async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);
   const method = formData.get("method");
   let url = "";
 
-  if (method === "caesar") {
-    url = "/encrypt/";
-  } else if (method === "vigenere") {
-    url = "/vigenere/encrypt/";
+  if (method === "caesar") url = "/encrypt/";
+  else if (method === "vigenere") url = "/vigenere/encrypt/";
+  else if (method === "affine") url = "/affine/encrypt/";
+  else if (method === "substitution") url = "/substitution/encrypt/";
+  else if (method === "railfence") url = "/railfence/encrypt/";
+
+  // özel anahtar isimleri düzenleme
+  if (method === "substitution") {
+    formData.set("key", formData.get("keySub"));
   }
 
   const res = await fetch(url, { method: "POST", body: formData });
   const data = await res.json();
-  document.getElementById("result").innerText = data.result || "Bir hata oluştu.";
+  document.getElementById("result").innerText = data.result || "❌ Bir hata oluştu.";
 };
 </script>
 </body>
