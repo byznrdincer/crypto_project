@@ -21,6 +21,9 @@
           <option value="affine">Affine Cipher (a, b Anahtarları)</option>
           <option value="substitution">Substitution Cipher (Alfabe Eşlemesi)</option>
           <option value="railfence">Rail Fence Cipher (Ray Sayısı)</option>
+          <option value="columnar">Columnar Transposition Cipher (Sütun Anahtarı)</option>
+          <option value="hill">Hill Cipher (2x2 Matris)</option>
+          <option value="vernam">Vernam Cipher (One-Time Pad)</option>
         </select>
       </div>
 
@@ -46,6 +49,20 @@
           <label class="form-label">Alfabe Anahtarı (26 Harf)</label>
           <input type="text" name="keySub" class="form-control" value="QWERTYUIOPASDFGHJKLZXCVBNM">
         </div>
+
+        <div class="mb-3" id="keyColumnar" style="display:none;">
+          <label class="form-label">Sütun Anahtarı (örnek: KEYWORD)</label>
+          <input type="text" name="keyColumnar" class="form-control" value="KEY">
+        </div>
+
+        <div class="mb-3" id="keyVernam" style="display:none;">
+          <label class="form-label">Vernam Anahtarı (metinle aynı uzunlukta veya tekrar eden)</label>
+          <input type="text" name="keyVernam" class="form-control" value="SECRET">
+        </div>
+
+        <div class="alert alert-info small mt-2" id="hillInfo" style="display:none;">
+          Hill Cipher sabit 2x2 matris kullanır: [[3,3],[2,5]]
+        </div>
       </div>
 
       <!-- Mesaj -->
@@ -68,21 +85,22 @@ const methodSelect = document.getElementById("methodSelect");
 const keySingle = document.getElementById("keySingle");
 const keyAffine = document.getElementById("keyAffine");
 const keySubstitution = document.getElementById("keySubstitution");
+const keyColumnar = document.getElementById("keyColumnar");
+const keyVernam = document.getElementById("keyVernam");
+const hillInfo = document.getElementById("hillInfo");
 
 // 🔄 Seçilen metoda göre form alanlarını göster/gizle
 methodSelect.onchange = () => {
-  keySingle.style.display = "none";
-  keyAffine.style.display = "none";
-  keySubstitution.style.display = "none";
+  // Hepsini gizle
+  [keySingle, keyAffine, keySubstitution, keyColumnar, keyVernam, hillInfo].forEach(e => e.style.display = "none");
 
   const method = methodSelect.value;
-  if (method === "caesar" || method === "vigenere" || method === "railfence") {
-    keySingle.style.display = "block";
-  } else if (method === "affine") {
-    keyAffine.style.display = "flex";
-  } else if (method === "substitution") {
-    keySubstitution.style.display = "block";
-  }
+  if (["caesar", "vigenere", "railfence"].includes(method)) keySingle.style.display = "block";
+  else if (method === "affine") keyAffine.style.display = "flex";
+  else if (method === "substitution") keySubstitution.style.display = "block";
+  else if (method === "columnar") keyColumnar.style.display = "block";
+  else if (method === "vernam") keyVernam.style.display = "block";
+  else if (method === "hill") hillInfo.style.display = "block";
 };
 
 // 🧩 Form gönderimi
@@ -92,15 +110,23 @@ document.getElementById("encryptForm").onsubmit = async (e) => {
   const method = formData.get("method");
   let url = "";
 
+  // URL yönlendirmeleri
   if (method === "caesar") url = "/encrypt/";
   else if (method === "vigenere") url = "/vigenere/encrypt/";
   else if (method === "affine") url = "/affine/encrypt/";
   else if (method === "substitution") url = "/substitution/encrypt/";
   else if (method === "railfence") url = "/railfence/encrypt/";
+  else if (method === "columnar") url = "/columnar/encrypt/";
+  else if (method === "hill") url = "/hill/encrypt/";
+  else if (method === "vernam") url = "/vernam/encrypt/";
 
   // özel anahtar isimleri düzenleme
   if (method === "substitution") {
     formData.set("key", formData.get("keySub"));
+  } else if (method === "columnar") {
+    formData.set("key", formData.get("keyColumnar"));
+  } else if (method === "vernam") {
+    formData.set("key", formData.get("keyVernam"));
   }
 
   const res = await fetch(url, { method: "POST", body: formData });
