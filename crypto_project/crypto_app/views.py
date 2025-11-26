@@ -379,3 +379,153 @@ def vernam_decrypt(request):
         result = vernam_cipher(text, key, decrypt=True)
         return JsonResponse({"result": result})
     return JsonResponse({"error": "Invalid request"})
+
+# ============================================================
+# 🔐 RSA (Kütüphanesiz Basit Model)
+# ============================================================
+import random
+from math import gcd
+
+# Asal sayı kontrol
+def is_prime(num):
+    if num < 2:
+        return False
+    for i in range(2, int(num**0.5)+1):
+        if num % i == 0:
+            return False
+    return True
+
+# Rastgele küçük asal üret
+def generate_prime():
+    while True:
+        p = random.randint(50, 150)   # eğitim amaçlı küçük asal
+        if is_prime(p):
+            return p
+
+# RSA anahtar üretimi
+def rsa_generate_keys():
+    p = generate_prime()
+    q = generate_prime()
+    n = p * q
+    phi = (p-1) * (q-1)
+
+    # e seç (phi ile coprime)
+    e = 3
+    while gcd(e, phi) != 1:
+        e += 2
+
+    # d hesapla (e * d ≡ 1 mod phi)
+    d = pow(e, -1, phi)
+
+    return p, q, n, e, d
+
+
+# RSA şifreleme
+def rsa_encrypt_number(m, e, n):
+    return pow(m, e, n)
+
+# RSA çözme
+def rsa_decrypt_number(c, d, n):
+    return pow(c, d, n)
+
+
+# ============================================================
+# 🔐 RSA VIEWS
+# ============================================================
+@csrf_exempt
+def rsa_generate(request):
+    if request.method == "GET":
+        p, q, n, e, d = rsa_generate_keys()
+        return JsonResponse({
+            "p": p, "q": q, "n": n,
+            "e": e, "d": d
+        })
+    return JsonResponse({"error": "Invalid request"})
+
+
+@csrf_exempt
+def rsa_encrypt_view(request):
+    if request.method == "POST":
+        m = int(request.POST.get("message", "0"))
+        n = int(request.POST.get("n"))
+        e = int(request.POST.get("e"))
+        cipher = rsa_encrypt_number(m, e, n)
+        return JsonResponse({"result": cipher})
+    return JsonResponse({"error": "Invalid request"})
+
+
+@csrf_exempt
+def rsa_decrypt_view(request):
+    if request.method == "POST":
+        c = int(request.POST.get("cipher", "0"))
+        n = int(request.POST.get("n"))
+        d = int(request.POST.get("d"))
+        msg = rsa_decrypt_number(c, d, n)
+        return JsonResponse({"result": msg})
+    return JsonResponse({"error": "Invalid request"})
+
+# ============================================================
+# 🔐 AES-Lite (Eğitimsel Basit AES)
+# ============================================================
+
+# Mini S-BOX (0–255 yerine ASCII için sade versiyon)
+SBOX = { 
+    chr(i): chr((i * 7 + 3) % 256) for i in range(256)
+}
+
+def aes_lite_encrypt(text, key):
+    # 1) XOR Key
+    x1 = "".join(chr(ord(text[i]) ^ ord(key[i % len(key)])) for i in range(len(text)))
+
+    # 2) S-Box substitution
+    x2 = "".join(SBOX.get(c, c) for c in x1)
+
+    # 3) Rotate characters
+    x3 = x2[1:] + x2[0]
+
+    # 4) Add round key (XOR)
+    cipher = "".join(chr(ord(x3[i]) ^ ord(key[i % len(key)])) for i in range(len(x3)))
+
+    return cipher.encode().hex()  # hexdump (okunabilir)
+
+
+def aes_lite_decrypt(hex_cipher, key):
+    cipher = bytes.fromhex(hex_cipher).decode(errors="ignore")
+
+    # 1) XOR Key (reverse of step 4)
+    x3 = "".join(chr(ord(cipher[i]) ^ ord(key[i % len(key)])) for i in range(len(cipher)))
+
+    # 2) Reverse rotate
+    x2 = x3[-1] + x3[:-1]
+
+    # 3) Reverse S-Box
+    inv_sbox = {v: k for k, v in SBOX.items()}
+    x1 = "".join(inv_sbox.get(c, c) for c in x2)
+
+    # 4) XOR Key (reverse of step 1)
+    text = "".join(chr(ord(x1[i]) ^ ord(key[i % len(key)])) for i in range(len(x1)))
+
+    return text
+
+
+# ============================================================
+# 🔐 AES VIEWS
+# ============================================================
+@csrf_exempt
+def aes_encrypt(request):
+    if request.method == "POST":
+        text = request.POST.get("message", "")
+        key = request.POST.get("key", "KEY")
+        result = aes_lite_encrypt(text, key)
+        return JsonResponse({"result": result})
+    return JsonResponse({"error": "Invalid request"})
+
+
+@csrf_exempt
+def aes_decrypt(request):
+    if request.method == "POST":
+        text = request.POST.get("message", "")
+        key = request.POST.get("key", "KEY")
+        result = aes_lite_decrypt(text, key)
+        return JsonResponse({"result": result})
+    return JsonResponse({"error": "Invalid request"})
