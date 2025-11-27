@@ -12,66 +12,80 @@
     <h2 class="mb-4 text-primary">🔐 Mesaj Şifreleme Uygulaması</h2>
     
     <form id="encryptForm" class="card p-4 shadow-sm">
+
       <!-- Şifreleme Yöntemi -->
       <div class="mb-3">
         <label class="form-label">Şifreleme Yöntemi</label>
         <select class="form-select" name="method" id="methodSelect">
-          <option value="caesar">Caesar Cipher (Kaydırma)</option>
-          <option value="vigenere">Vigenère Cipher (Anahtar Kelimeli)</option>
-          <option value="affine">Affine Cipher (a, b Anahtarları)</option>
-          <option value="substitution">Substitution Cipher (Alfabe Eşlemesi)</option>
-          <option value="railfence">Rail Fence Cipher (Ray Sayısı)</option>
-          <option value="columnar">Columnar Transposition Cipher (Sütun Anahtarı)</option>
-          <option value="hill">Hill Cipher (2x2 Matris)</option>
-          <option value="vernam">Vernam Cipher (One-Time Pad)</option>
+          <option value="caesar">Caesar Cipher</option>
+          <option value="vigenere">Vigenère Cipher</option>
+          <option value="affine">Affine Cipher</option>
+          <option value="substitution">Substitution Cipher</option>
+          <option value="railfence">Rail Fence Cipher</option>
+          <option value="columnar">Columnar Transposition Cipher</option>
+          <option value="hill">Hill Cipher</option>
+          <option value="vernam">Vernam Cipher</option>
+          <option value="aes">AES-Lite Cipher</option> <!-- 🔥 YENİ EKLENDİ -->
         </select>
       </div>
 
-      <!-- Anahtar Alanı -->
+      <!-- Anahtar Alanları -->
       <div id="keyFields">
+        <!-- Normal key -->
         <div class="mb-3" id="keySingle">
-          <label class="form-label">Anahtar / Kaydırma Sayısı</label>
-          <input type="text" name="key" class="form-control" value="3">
+          <label class="form-label">Anahtar / Kaydırma</label>
+          <input type="text" name="key" class="form-control" value="3" />
         </div>
 
+        <!-- Affine -->
         <div class="row" id="keyAffine" style="display:none;">
           <div class="col">
             <label class="form-label">a Değeri</label>
-            <input type="number" name="a" class="form-control" value="5">
+            <input type="number" name="a" class="form-control" value="5" />
           </div>
           <div class="col">
             <label class="form-label">b Değeri</label>
-            <input type="number" name="b" class="form-control" value="8">
+            <input type="number" name="b" class="form-control" value="8" />
           </div>
         </div>
 
+        <!-- Substitution -->
         <div class="mb-3" id="keySubstitution" style="display:none;">
           <label class="form-label">Alfabe Anahtarı (26 Harf)</label>
           <input type="text" name="keySub" class="form-control" value="QWERTYUIOPASDFGHJKLZXCVBNM">
         </div>
 
+        <!-- Columnar -->
         <div class="mb-3" id="keyColumnar" style="display:none;">
-          <label class="form-label">Sütun Anahtarı (örnek: KEYWORD)</label>
+          <label class="form-label">Sütun Anahtarı</label>
           <input type="text" name="keyColumnar" class="form-control" value="KEY">
         </div>
 
+        <!-- Vernam -->
         <div class="mb-3" id="keyVernam" style="display:none;">
-          <label class="form-label">Vernam Anahtarı (metinle aynı uzunlukta veya tekrar eden)</label>
+          <label class="form-label">Vernam Anahtarı</label>
           <input type="text" name="keyVernam" class="form-control" value="SECRET">
         </div>
 
+        <!-- AES-Lite -->
+        <div class="mb-3" id="keyAES" style="display:none;">
+          <label class="form-label">AES Anahtarı</label>
+          <input type="text" name="keyAES" class="form-control" value="KEY123">
+        </div>
+
+        <!-- Hill info -->
         <div class="alert alert-info small mt-2" id="hillInfo" style="display:none;">
-          Hill Cipher sabit 2x2 matris kullanır: [[3,3],[2,5]]
+          Hill Cipher sabit matris: [[3,3],[2,5]]
         </div>
       </div>
 
       <!-- Mesaj -->
       <div class="mb-3">
         <label class="form-label">Mesaj</label>
-        <textarea name="message" class="form-control" rows="3" placeholder="Şifrelenecek mesajınızı yazın..."></textarea>
+        <textarea name="message" class="form-control" rows="3"></textarea>
       </div>
 
-      <button type="submit" class="btn btn-primary w-100">🔒 Şifrele</button>
+      <button class="btn btn-primary w-100">🔒 Şifrele</button>
     </form>
 
     <div class="mt-4">
@@ -87,30 +101,32 @@ const keyAffine = document.getElementById("keyAffine");
 const keySubstitution = document.getElementById("keySubstitution");
 const keyColumnar = document.getElementById("keyColumnar");
 const keyVernam = document.getElementById("keyVernam");
+const keyAES = document.getElementById("keyAES");
 const hillInfo = document.getElementById("hillInfo");
 
-// 🔄 Seçilen metoda göre form alanlarını göster/gizle
+// Metoda göre alan gösterme/gizleme
 methodSelect.onchange = () => {
-  // Hepsini gizle
-  [keySingle, keyAffine, keySubstitution, keyColumnar, keyVernam, hillInfo].forEach(e => e.style.display = "none");
+  [keySingle, keyAffine, keySubstitution, keyColumnar, keyVernam, keyAES, hillInfo]
+    .forEach(e => e.style.display = "none");
 
-  const method = methodSelect.value;
-  if (["caesar", "vigenere", "railfence"].includes(method)) keySingle.style.display = "block";
-  else if (method === "affine") keyAffine.style.display = "flex";
-  else if (method === "substitution") keySubstitution.style.display = "block";
-  else if (method === "columnar") keyColumnar.style.display = "block";
-  else if (method === "vernam") keyVernam.style.display = "block";
-  else if (method === "hill") hillInfo.style.display = "block";
+  const m = methodSelect.value;
+
+  if (["caesar", "vigenere", "railfence"].includes(m)) keySingle.style.display = "block";
+  else if (m === "affine") keyAffine.style.display = "flex";
+  else if (m === "substitution") keySubstitution.style.display = "block";
+  else if (m === "columnar") keyColumnar.style.display = "block";
+  else if (m === "vernam") keyVernam.style.display = "block";
+  else if (m === "aes") keyAES.style.display = "block";  // AES key alanı
+  else if (m === "hill") hillInfo.style.display = "block";
 };
 
-// 🧩 Form gönderimi
+// Form gönderimi
 document.getElementById("encryptForm").onsubmit = async (e) => {
   e.preventDefault();
   const formData = new FormData(e.target);
   const method = formData.get("method");
-  let url = "";
 
-  // URL yönlendirmeleri
+  let url = "";
   if (method === "caesar") url = "/encrypt/";
   else if (method === "vigenere") url = "/vigenere/encrypt/";
   else if (method === "affine") url = "/affine/encrypt/";
@@ -119,19 +135,17 @@ document.getElementById("encryptForm").onsubmit = async (e) => {
   else if (method === "columnar") url = "/columnar/encrypt/";
   else if (method === "hill") url = "/hill/encrypt/";
   else if (method === "vernam") url = "/vernam/encrypt/";
+  else if (method === "aes") url = "/aes/encrypt/";
 
-  // özel anahtar isimleri düzenleme
-  if (method === "substitution") {
-    formData.set("key", formData.get("keySub"));
-  } else if (method === "columnar") {
-    formData.set("key", formData.get("keyColumnar"));
-  } else if (method === "vernam") {
-    formData.set("key", formData.get("keyVernam"));
-  }
+  // özel isimlerin eşitlenmesi
+  if (method === "substitution") formData.set("key", formData.get("keySub"));
+  else if (method === "columnar") formData.set("key", formData.get("keyColumnar"));
+  else if (method === "vernam") formData.set("key", formData.get("keyVernam"));
+  else if (method === "aes") formData.set("key", formData.get("keyAES"));
 
   const res = await fetch(url, { method: "POST", body: formData });
   const data = await res.json();
-  document.getElementById("result").innerText = data.result || "❌ Bir hata oluştu.";
+  document.getElementById("result").innerText = data.result || "❌ Hata oluştu.";
 };
 </script>
 </body>
