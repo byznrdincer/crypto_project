@@ -1,10 +1,6 @@
 from django.urls import path
 from . import views
-from .views import (
-    vernam_encrypt, vernam_decrypt,
-    rsa_generate, rsa_encrypt_view, rsa_decrypt_view,
-    aes_encrypt, aes_decrypt
-)
+
 
 urlpatterns = [
     # 🏠 Ana sayfa
@@ -57,13 +53,5 @@ urlpatterns = [
     # ============================================================
     path("vernam/encrypt/", views.vernam_encrypt, name="vernam_encrypt"),
     path("vernam/decrypt/", views.vernam_decrypt, name="vernam_decrypt"),
-    # RSA routes
-    path("rsa/generate/", rsa_generate),
-    path("rsa/encrypt/", rsa_encrypt_view),
-    path("rsa/decrypt/", rsa_decrypt_view),
-
-# AES routes
-    path("aes/encrypt/", aes_encrypt),
-    path("aes/decrypt/", aes_decrypt),
 
 ]
