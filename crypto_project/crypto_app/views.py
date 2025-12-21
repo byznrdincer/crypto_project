@@ -1,15 +1,20 @@
-from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-import numpy as np
 from django.shortcuts import render
-
-# Create your views here.
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from Crypto.Cipher import AES, DES, PKCS1_OAEP
-from Crypto.PublicKey import RSA
+import json
 import base64
+
+import numpy as np
+
+# ===== KÜTÜPHANELİ (LIB) =====
+from crypto.rsa_lib import decrypt_key
+from crypto.aes_lib import aes_decrypt
+from crypto.des_lib import des_decrypt
+
+# ===== MANUEL =====
+from crypto.aes_manual import manual_aes_decrypt
+from crypto.des_manual import manual_des_decrypt
+
 
 
 # ============================================================
@@ -391,117 +396,119 @@ def vernam_decrypt(request):
 
 
 
-# ============================================================
-# AES-128
-# ============================================================
-
-def pad(s):
-    pad_len = 16 - len(s) % 16
-    return s + chr(pad_len) * pad_len
-
-def unpad(s):
-    return s[:-ord(s[-1])]
-
+# ======================================================
+# AES + RSA (KÜTÜPHANELİ)
+# Endpoint: /receive/
+# ======================================================
 @csrf_exempt
-def aes_encrypt_library(request):
-    if request.method == "POST":
-        text = request.POST.get("message", "")
-        key = request.POST.get("key", "mykey1234567890")
+def receive_message(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
 
-        key = key.encode().ljust(16, b'0')[:16]
-        cipher = AES.new(key, AES.MODE_ECB)
-        encrypted = cipher.encrypt(pad(text).encode())
-        return JsonResponse({"result": base64.b64encode(encrypted).decode()})
+    try:
+        body = json.loads(request.body)
 
-    return JsonResponse({"error": "Invalid request"})
+        encrypted_key = base64.b64decode(body["key"])
+        encrypted_message = base64.b64decode(body["message"])
 
+        aes_key = decrypt_key(encrypted_key)
+        plaintext = aes_decrypt(encrypted_message, aes_key)
+
+        print("🔓 AES (LIB) ÇÖZÜLEN MESAJ:", plaintext)
+
+        return JsonResponse({
+            "status": "OK",
+            "algorithm": "AES + RSA (LIB)",
+            "message": "AES mesajı çözüldü"
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# ======================================================
+# DES + RSA (KÜTÜPHANELİ)
+# Endpoint: /receive-des-lib/
+# ======================================================
 @csrf_exempt
-def aes_decrypt_library(request):
-    if request.method == "POST":
-        cipher_text = request.POST.get("message", "")
-        key = request.POST.get("key", "mykey1234567890")
+def receive_des_lib(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
 
-        key = key.encode().ljust(16, b'0')[:16]
-        cipher = AES.new(key, AES.MODE_ECB)
-        decoded = base64.b64decode(cipher_text)
-        decrypted = unpad(cipher.decrypt(decoded).decode())
-        return JsonResponse({"result": decrypted})
+    try:
+        body = json.loads(request.body)
 
-    return JsonResponse({"error": "Invalid request"})
+        encrypted_key = base64.b64decode(body["key"])
+        encrypted_message = base64.b64decode(body["message"])
+
+        des_key = decrypt_key(encrypted_key)
+        plaintext = des_decrypt(encrypted_message, des_key)
+
+        print("🔓 DES (LIB) ÇÖZÜLEN MESAJ:", plaintext)
+
+        return JsonResponse({
+            "status": "OK",
+            "algorithm": "DES + RSA (LIB)",
+            "message": "DES mesajı çözüldü"
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
-# ============================================================
-# DES
-# ============================================================
-
+# ======================================================
+# AES (MANUEL – KÜTÜPHANESİZ)
+# Endpoint: /receive-aes-manual/
+# ======================================================
 @csrf_exempt
-def des_encrypt_library(request):
-    if request.method == "POST":
-        text = request.POST.get("message", "")
-        key = request.POST.get("key", "mysecret")
+def receive_aes_manual(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
 
-        key = key.encode().ljust(8, b'0')[:8]
-        cipher = DES.new(key, DES.MODE_ECB)
-        padded = pad(text).encode()
-        encrypted = cipher.encrypt(padded)
+    try:
+        body = json.loads(request.body)
 
-        return JsonResponse({"result": base64.b64encode(encrypted).decode()})
+        cipher = body["cipher"]
+        key = body["key"]
 
-    return JsonResponse({"error": "Invalid request"})
+        plaintext = manual_aes_decrypt(cipher, key)
 
+        print("🔓 AES (MANUEL) ÇÖZÜLEN MESAJ:", plaintext)
+
+        return JsonResponse({
+            "status": "OK",
+            "algorithm": "AES (MANUAL)",
+            "message": plaintext
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# ======================================================
+# DES (MANUEL – KÜTÜPHANESİZ)
+# Endpoint: /receive-des-manual/
+# ======================================================
 @csrf_exempt
-def des_decrypt_library(request):
-    if request.method == "POST":
-        cipher_text = request.POST.get("message", "")
-        key = request.POST.get("key", "mysecret")
+def receive_des_manual(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=400)
 
-        key = key.encode().ljust(8, b'0')[:8]
-        cipher = DES.new(key, DES.MODE_ECB)
-        decoded = base64.b64decode(cipher_text)
-        decrypted = cipher.decrypt(decoded).decode()
-        return JsonResponse({"result": unpad(decrypted)})
+    try:
+        body = json.loads(request.body)
 
-    return JsonResponse({"error": "Invalid request"})
+        cipher = body["cipher"]
+        key = body["key"]
 
+        plaintext = manual_des_decrypt(cipher, key)
 
-# ============================================================
-# RSA (Gerçek – 2048bit)
-# ============================================================
+        print("🔓 DES (MANUEL) ÇÖZÜLEN MESAJ:", plaintext)
 
-@csrf_exempt
-def rsa_generate_keys(request):
-    key = RSA.generate(2048)
-    private_key = key.export_key().decode()
-    public_key = key.publickey().export_key().decode()
-    return JsonResponse({
-        "private_key": private_key,
-        "public_key": public_key
-    })
+        return JsonResponse({
+            "status": "OK",
+            "algorithm": "DES (MANUAL)",
+            "message": plaintext
+        })
 
-@csrf_exempt
-def rsa_encrypt_view(request):
-    if request.method == "POST":
-        message = request.POST.get("message", "")
-        public_key = request.POST.get("public_key", "")
-
-        key = RSA.import_key(public_key)
-        cipher = PKCS1_OAEP.new(key)
-        encrypted = cipher.encrypt(message.encode())
-        return JsonResponse({"result": base64.b64encode(encrypted).decode()})
-
-    return JsonResponse({"error": "Invalid request"})
-
-@csrf_exempt
-def rsa_decrypt_view(request):
-    if request.method == "POST":
-        cipher_text = request.POST.get("message", "")
-        private_key = request.POST.get("private_key", "")
-
-        key = RSA.import_key(private_key)
-        cipher = PKCS1_OAEP.new(key)
-
-        decrypted = cipher.decrypt(base64.b64decode(cipher_text))
-        return JsonResponse({"result": decrypted.decode()})
-
-    return JsonResponse({"error": "Invalid request"})
-
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

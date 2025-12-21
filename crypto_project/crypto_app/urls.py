@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import receive_message
 
 urlpatterns = [
     # 🏠 Ana sayfa
@@ -31,20 +32,8 @@ urlpatterns = [
 
     path("vernam/encrypt/", views.vernam_encrypt),
     path("vernam/decrypt/", views.vernam_decrypt),
-
-    # =======================
-    # AES / DES (LIBRARY)
-    # =======================
-    path("aes/encrypt/", views.aes_encrypt_library),
-    path("aes/decrypt/", views.aes_decrypt_library),
-
-    path("des/encrypt/", views.des_encrypt_library),
-    path("des/decrypt/", views.des_decrypt_library),
-
-    # =======================
-    # RSA
-    # =======================
-    path("rsa/generate/", views.rsa_generate_keys),
-    path("rsa/encrypt/", views.rsa_encrypt_view),
-    path("rsa/decrypt/", views.rsa_decrypt_view),
+    path("receive/", views.receive_message),
+    path("receive-des-lib/", views.receive_des_lib),
+    path("receive-aes-manual/", views.receive_aes_manual),
+    path("receive-des-manual/", views.receive_des_manual),
 ]
