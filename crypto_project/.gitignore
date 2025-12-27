@@ -1,0 +1,5 @@
+crypto/rsa_keys/
+*.pem
+*.key
+# RSA private/public keys (DO NOT COMMIT)
+crypto/rsa_keys/

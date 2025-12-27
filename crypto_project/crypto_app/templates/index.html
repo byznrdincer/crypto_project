@@ -1,251 +1,346 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title> Mesaj Şifreleme İstemcisi</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>İstemci – Şifreleme</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- 🌈 GLOBAL STYLE -->
+  <style>
+/* =========================
+   GLOBAL
+========================= */
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, #a78bfa 0%, transparent 45%),
+    radial-gradient(circle at bottom right, #f0abfc 0%, transparent 45%),
+    linear-gradient(180deg, #0b0b14, #111827);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  color: #e5e7eb;
+}
+
+/* TITLES */
+h2 {
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  background: linear-gradient(90deg, #c4b5fd, #f5d0fe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+label { color: #c7d2fe !important; }
+
+/* CONTAINER */
+.container { max-width: 900px; }
+
+/* CARD */
+.card {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(18px);
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.55);
+}
+
+/* INPUTS */
+.form-control,
+.form-select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #f1f5f9;
+  border-radius: 16px;
+}
+
+/* BUTTONS */
+.btn {
+  border-radius: 18px;
+  font-weight: 700;
+  transition: all 0.25s ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #a78bfa, #f0abfc);
+  border: none;
+  color: #1e1b4b;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #8b5cf6, #d946ef);
+  border: none;
+  color: #faf5ff;
+}
+
+/* SWITCH BAR */
+.switch-bar {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.switch-btn {
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.switch-btn.active {
+  background: linear-gradient(135deg, #a78bfa, #f0abfc);
+  color: #1e1b4b;
+}
+/* =========================
+   SELECT DROPDOWN – FIX
+========================= */
+select,
+select option {
+  background-color: #0f172a !important; /* koyu arka plan */
+  color: #f8fafc !important;            /* açık yazı */
+}
+
+/* Hover */
+select option:hover {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+}
+
+/* Seçili option */
+select option:checked {
+  background-color: #9333ea !important;
+  color: #ffffff !important;
+}
+
+  </style>
 </head>
 
-<body class="bg-light">
-  <div class="container py-5 text-center">
-    <h2 class="mb-4 text-primary"> Mesaj Şifreleme Uygulaması</h2>
-    
-    <!-- ========================= -->
-    <!-- 🔒 ŞİFRELEME FORMU -->
-    <!-- ========================= -->
-    <form id="encryptForm" class="card p-4 shadow-sm mb-4">
+<body>
 
-      <h5 class="text-start text-secondary mb-3"> Şifreleme</h5>
+<div class="container py-5">
 
-      <!-- Şifreleme Yöntemi -->
-      <div class="mb-3">
-        <label class="form-label">Şifreleme Yöntemi</label>
-        <select class="form-select" name="method" id="methodSelect">
+  <!-- 🔁 PAGE SWITCH -->
+  <div class="switch-bar">
+    <div class="switch-btn active">İstemci (Şifreleme)</div>
+    <div class="switch-btn" onclick="window.location.href='/decrypt/'">
+      Sunucu (Deşifreleme)
+    </div>
+  </div>
 
-          <option value="caesar">Caesar Cipher</option>
-          <option value="vigenere">Vigenère Cipher</option>
-          <option value="affine">Affine Cipher</option>
-          <option value="substitution">Substitution Cipher</option>
-          <option value="railfence">Rail Fence Cipher</option>
-          <option value="columnar">Columnar Transposition Cipher</option>
-          <option value="hill">Hill Cipher</option>
-          <option value="vernam">Vernam Cipher</option>
-
-          <option value="aes_lib">AES (Library)</option>
-          <option value="des_lib">DES (Library)</option>
-          <option value="rsa_lib">RSA (Library)</option>
-        </select>
-      </div>
-
-      <!-- ANAHTAR ALANLARI -->
-      <div id="keyFields">
-
-        <div class="mb-3" id="keySingle">
-          <label class="form-label">Anahtar</label>
-          <input type="text" name="key" class="form-control" value="3" />
-        </div>
-
-        <div class="mb-3" id="keyAESLib" style="display:none;">
-          <label class="form-label">AES Key</label>
-          <input type="text" name="keyAESLib" class="form-control">
-        </div>
-
-        <div class="mb-3" id="keyDESLib" style="display:none;">
-          <label class="form-label">DES Key</label>
-          <input type="text" name="keyDESLib" class="form-control">
-        </div>
-
-        <div id="rsaFields" style="display:none;">
-          <label class="form-label">Public Key</label>
-          <textarea name="public_key" class="form-control" rows="3"></textarea>
-
-          <label class="form-label mt-2">Private Key</label>
-          <textarea name="private_key" class="form-control" rows="3"></textarea>
-        </div>
-
-      </div>
-
-      <div class="mb-3 mt-3">
-        <label class="form-label">Mesaj</label>
-        <textarea name="message" class="form-control" rows="3"></textarea>
-      </div>
-
-      <button class="btn btn-primary w-100">🔒 Şifrele</button>
-    </form>
-
-    <!-- ========================= -->
-    <!-- 🔓 DEŞİFRELEME FORMU -->
-    <!-- ========================= -->
-    <form id="decryptForm" class="card p-4 shadow-sm">
-
-  <h5 class="text-start text-secondary mb-3"> Deşifreleme</h5>
-
+  <h2 class="mb-4 text-center">🔐 İstemci – Şifreleme</h2>
+<form id="encryptForm" class="card p-4">
   <div class="mb-3">
-    <label class="form-label">Şifreli Metin</label>
-    <textarea name="message" class="form-control" rows="3"></textarea>
+    <label>Algoritma</label>
+    <select id="method" class="form-select">
+
+      <!-- 🔐 KLASİK ŞİFRELER -->
+      <option value="caesar">Caesar Cipher</option>
+      <option value="vigenere">Vigenère Cipher</option>
+      <option value="affine">Affine Cipher</option>
+      <option value="substitution">Substitution Cipher</option>
+      <option value="railfence">Rail Fence Cipher</option>
+      <option value="columnar">Columnar Transposition</option>
+      <option value="hill">Hill Cipher</option>
+      <option value="vernam">Vernam Cipher</option>
+
+      <!-- 🔒 MODERN (LIBRARY) -->
+      <option value="aes_lib">AES + RSA (Library)</option>
+      <option value="des_lib">DES + RSA (Library)</option>
+
+      <!-- 🧪 MANUAL -->
+      <option value="aes_manual">AES (Manual)</option>
+      <option value="des_manual">DES (Manual)</option>
+
+    </select>
   </div>
 
   <div class="mb-3">
-    <label class="form-label">Anahtar</label>
-    <input type="text" name="key" class="form-control">
+    <label>Anahtar</label>
+    <input id="key" class="form-control">
   </div>
 
-  <button type="button"
-          class="btn btn-success w-100"
-          onclick="decryptMessage()">
-    🔓 Deşifrele
-  </button>
+  <div class="mb-3">
+    <label>Mesaj</label>
+    <textarea id="message" class="form-control"></textarea>
+  </div>
 
+  <div class="mb-3">
+    <label>Dosya</label>
+    <input type="file" id="file" class="form-control">
+  </div>
+
+  <button class="btn btn-primary w-100">Şifrele</button>
 </form>
 
-    <!-- SONUÇ -->
-    <div class="mt-4">
-      <h5>🧩 Sonuç:</h5>
-      <p id="result" class="fw-bold text-success"></p>
-    </div>
-
-  </div>
+</div>
 <script>
-// =====================================================
-// TÜM ALANLARI GİZLE
-// =====================================================
-function hideAll() {
-  document.querySelectorAll("#keyFields > div").forEach(e => e.style.display = "none");
-}
-
-// =====================================================
-// ŞİFRE YÖNTEMİ SEÇİMİ
-// =====================================================
-document.getElementById("methodSelect").onchange = () => {
-  hideAll();
-  const m = document.getElementById("methodSelect").value;
-
-  if (["caesar","vigenere","railfence"].includes(m)) keySingle.style.display = "block";
-  else if (m === "affine") keyAffine.style.display = "flex";
-  else if (m === "substitution") keySubstitution.style.display = "block";
-  else if (m === "columnar") keyColumnar.style.display = "block";
-  else if (m === "vernam") keyVernam.style.display = "block";
-
-  // 🔒 AES / DES / RSA (LIBRARY)
-  else if (m === "aes_lib") keyAESLib.style.display = "block";
-  else if (m === "des_lib") keyDESLib.style.display = "block";
-  else if (m === "rsa_lib") rsaFields.style.display = "block";
-
-  else if (m === "hill") hillInfo.style.display = "block";
-};
-
-// =====================================================
-// RSA KEY GENERATE
-// =====================================================
-async function generateRSA() {
-  const res = await fetch("/rsa/generate/");
-  const data = await res.json();
-  document.getElementById("rsa_public_key").value = data.public_key || "";
-  document.getElementById("rsa_private_key").value = data.private_key || "";
-}
-
-// =====================================================
-// 🔒 ENCRYPT
-// =====================================================
-document.getElementById("encryptForm").onsubmit = async (e) => {
+document.getElementById("encryptForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const formData = new FormData(e.target);
-  const method = document.getElementById("methodSelect").value;
-  let url = "";
-
-  if (method === "aes_lib") {
-    url = "/aes/encrypt/";
-    formData.set("key", formData.get("keyAESLib"));
-  }
-  else if (method === "des_lib") {
-    url = "/des/encrypt/";
-    formData.set("key", formData.get("keyDESLib"));
-  }
-  else if (method === "rsa_lib") {
-    url = "/rsa/encrypt/";
-  }
-  else if (method === "caesar") url = "/encrypt/";
-  else if (method === "vigenere") url = "/vigenere/encrypt/";
-  else if (method === "affine") url = "/affine/encrypt/";
-  else if (method === "substitution") {
-    url = "/substitution/encrypt/";
-    formData.set("key", formData.get("keySub"));
-  }
-  else if (method === "railfence") url = "/railfence/encrypt/";
-  else if (method === "columnar") {
-    url = "/columnar/encrypt/";
-    formData.set("key", formData.get("keyColumnar"));
-  }
-  else if (method === "vernam") {
-    url = "/vernam/encrypt/";
-    formData.set("key", formData.get("keyVernam"));
-  }
-  else if (method === "hill") url = "/hill/encrypt/";
-
-  try {
-    const res = await fetch(url, { method: "POST", body: formData });
-    const data = await res.json();
-    document.getElementById("result").innerText = data.result || "❌ Sunucu hatası";
-  } catch {
-    document.getElementById("result").innerText = "❌ Bağlantı hatası";
-  }
-};
-</script>
-
-<script>
-// =====================================================
-// 🔓 DECRYPT  (BURASI ASIL DÜZELTİLEN YER)
-// =====================================================
-async function decryptMessage() {
-
-  const form = document.getElementById("decryptForm");   // ✅ DOĞRU FORM
-  const formData = new FormData(form);
-  const method = document.getElementById("methodSelect").value;
+  const method  = document.getElementById("method").value;
+  const keyRaw  = document.getElementById("key").value.trim();
+  const message = document.getElementById("message").value.trim();
+  const file    = document.getElementById("file").files[0];
 
   let url = "";
+  let options = {};
 
-  // 🔓 LIBRARY
-  if (method === "aes_lib") {
-    url = "/aes/decrypt/";
-    formData.set("key", document.querySelector("[name='keyAESLib']").value);
-    formData.set("message", formData.get("ciphertext"));
-  }
-  else if (method === "des_lib") {
-    url = "/des/decrypt/";
-    formData.set("key", document.querySelector("[name='keyDESLib']").value);
-    formData.set("message", formData.get("ciphertext"));
-  }
-  else if (method === "rsa_lib") {
-    url = "/rsa/decrypt/";
-    formData.set("message", formData.get("ciphertext"));
+  if (!file && !message) {
+    alert("Mesaj veya dosya gerekli");
+    return;
   }
 
-  // 🔓 MANUEL
-  else if (method === "caesar") {
-    url = "/decrypt/";
-    formData.set("message", formData.get("ciphertext"));
-    formData.set("key", formData.get("decrypt_key"));
-  }
-  else if (method === "vigenere") {
-    url = "/vigenere/decrypt/";
-    formData.set("message", formData.get("ciphertext"));
-    formData.set("key", formData.get("decrypt_key"));
-  }
-  else if (method === "affine") {
-    url = "/affine/decrypt/";
-    formData.set("message", formData.get("ciphertext"));
+  /* =====================================================
+     AFFINE KEY PARSE (a,b)
+  ===================================================== */
+  let a = null, b = null;
+  if (method === "affine") {
+    if (!keyRaw.includes(",")) {
+      alert("Affine anahtarı a,b formatında olmalı (örn: 5,8)");
+      return;
+    }
+
+    [a, b] = keyRaw.split(",").map(Number);
+
+    if (isNaN(a) || isNaN(b)) {
+      alert("Affine anahtarında a ve b sayı olmalı");
+      return;
+    }
   }
 
+  /* =====================================================
+     FILE VARSA
+  ===================================================== */
+  if (file) {
+    const fd = new FormData();
+    fd.append("file", file);
+
+    if (method === "affine") {
+      fd.append("a", a);
+      fd.append("b", b);
+    } else if (keyRaw) {
+      fd.append("key", keyRaw);
+    }
+
+    switch (method) {
+      case "aes_lib":        url = "/encrypt-file/"; break;
+      case "des_lib":        url = "/encrypt-file-des/"; break;
+      case "aes_manual":     url = "/receive-aes-manual/"; break;
+      case "des_manual":     url = "/receive-des-manual/"; break;
+
+      case "caesar":         url = "/file/caesar/encrypt/"; break;
+      case "vigenere":       url = "/file/vigenere/encrypt/"; break;
+      case "affine":         url = "/file/affine/encrypt/"; break;
+      case "substitution":   url = "/file/substitution/encrypt/"; break;
+      case "railfence":      url = "/file/railfence/encrypt/"; break;
+
+      default:
+        alert("Dosya için desteklenmeyen algoritma");
+        return;
+    }
+
+    options = { method: "POST", body: fd };
+  }
+
+  /* =====================================================
+     FILE YOKSA → TEXT
+  ===================================================== */
+  else {
+
+    /* ===== AES + RSA ===== */
+    if (method === "aes_lib") {
+      url = "/receive/";
+      options = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      };
+    }
+
+    /* ===== DES + RSA ===== */
+    else if (method === "des_lib") {
+      url = "/receive-des-lib/";
+      options = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      };
+    }
+
+    /* ===== AES MANUAL ===== */
+    else if (method === "aes_manual") {
+      url = "/receive-aes-manual/";
+      options = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, key: keyRaw })
+      };
+    }
+
+    /* ===== DES MANUAL ===== */
+    else if (method === "des_manual") {
+      url = "/receive-des-manual/";
+      options = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, key: keyRaw })
+      };
+    }
+
+    /* ===== KLASİK ŞİFRELER ===== */
+    else {
+      const fd = new FormData();
+      fd.append("message", message);
+
+      if (method === "affine") {
+        fd.append("a", a);
+        fd.append("b", b);
+      } else if (keyRaw) {
+        fd.append("key", keyRaw);
+      }
+
+      switch (method) {
+        case "caesar":        url = "/encrypt/"; break;
+        case "vigenere":      url = "/vigenere/encrypt/"; break;
+        case "affine":        url = "/affine/encrypt/"; break;
+        case "substitution":  url = "/substitution/encrypt/"; break;
+        case "railfence":     url = "/railfence/encrypt/"; break;
+        case "columnar":      url = "/columnar/encrypt/"; break;
+        case "hill":          url = "/hill/encrypt/"; break;
+        case "vernam":        url = "/vernam/encrypt/"; break;
+
+        default:
+          alert("Desteklenmeyen algoritma");
+          return;
+      }
+
+      options = { method: "POST", body: fd };
+    }
+  }
+
+  /* =====================================================
+     FETCH
+  ===================================================== */
   try {
-    const res = await fetch(url, { method: "POST", body: formData });
+    const res = await fetch(url, options);
     const data = await res.json();
-    document.getElementById("result").innerText = data.result || "❌ Sunucu hatası";
-  } catch {
-    document.getElementById("result").innerText = "❌ Bağlantı hatası";
+
+    localStorage.setItem("ciphertext", data.ciphertext || data.result);
+    localStorage.setItem("method", method);
+
+    if (data.encrypted_key) {
+      localStorage.setItem("encrypted_key", data.encrypted_key);
+    }
+
+    window.location.href = "/decrypt/";
   }
-}
+  catch (err) {
+    alert("Sunucu hatası");
+    console.error(err);
+  }
+});
 </script>
 
 

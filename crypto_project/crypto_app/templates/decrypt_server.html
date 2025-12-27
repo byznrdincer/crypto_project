@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sunucu – Deşifreleme</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, #a78bfa 0%, transparent 45%),
+    radial-gradient(circle at bottom right, #f0abfc 0%, transparent 45%),
+    linear-gradient(180deg, #0b0b14, #111827);
+  font-family: "Inter", system-ui, sans-serif;
+  color: #e5e7eb;
+}
+
+h2 {
+  font-weight: 800;
+  background: linear-gradient(90deg, #c4b5fd, #f5d0fe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+label { color: #c7d2fe !important; }
+h5 { color: #ddd6fe; }
+
+.container { max-width: 900px; }
+
+.card {
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(18px);
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.55);
+}
+
+.form-control,
+.form-select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #f1f5f9;
+  border-radius: 16px;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #8b5cf6, #d946ef);
+  border: none;
+  font-weight: 700;
+}
+
+.switch-bar {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.switch-btn {
+  padding: 10px 24px;
+  border-radius: 999px;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.08);
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.switch-btn.active {
+  background: linear-gradient(135deg, #8b5cf6, #d946ef);
+  color: #fff;
+}
+
+select, option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+  </style>
+</head>
+
+<body>
+
+<div class="container py-5">
+
+  <div class="switch-bar">
+    <div class="switch-btn" onclick="window.location.href='/'">
+      İstemci (Şifreleme)
+    </div>
+    <div class="switch-btn active">
+      Sunucu (Deşifreleme)
+    </div>
+  </div>
+
+  <h2 class="mb-4 text-center">🖥️ Sunucu – Deşifreleme</h2>
+<form class="card p-4">
+
+  <div class="mb-3">
+    <label>Algoritma</label>
+    <select id="method" class="form-select">
+
+      <!-- 🔐 KLASİK ŞİFRELER -->
+      <option value="caesar">Caesar Cipher</option>
+      <option value="vigenere">Vigenère Cipher</option>
+      <option value="affine">Affine Cipher</option>
+      <option value="substitution">Substitution Cipher</option>
+      <option value="railfence">Rail Fence Cipher</option>
+      <option value="columnar">Columnar Transposition</option>
+      <option value="hill">Hill Cipher</option>
+      <option value="vernam">Vernam Cipher</option>
+
+      <!-- 🔒 MODERN (LIBRARY) -->
+      <option value="aes_lib">AES + RSA (Library)</option>
+      <option value="des_lib">DES + RSA (Library)</option>
+
+      <!-- 🧪 MANUAL -->
+      <option value="aes_manual">AES (Manual)</option>
+      <option value="des_manual">DES (Manual)</option>
+
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label>Şifreli Metin</label>
+    <textarea id="cipher" class="form-control" rows="4"></textarea>
+  </div>
+
+  <div class="mb-3">
+    <label>Anahtar</label>
+    <input id="key" class="form-control">
+  </div>
+
+  <button type="button" id="decryptBtn" class="btn btn-success w-100">
+    Deşifrele
+  </button>
+
+</form>
+
+
+  <div class="mt-4">
+    <h5>Plaintext</h5>
+    <textarea id="result" class="form-control" rows="4"></textarea>
+  </div>
+</div>
+<script>
+/* 🔥 LOCALSTORAGE'DAN GELEN VERİLER */
+document.addEventListener("DOMContentLoaded", () => {
+  const cipher = localStorage.getItem("ciphertext");
+  const method = localStorage.getItem("method");
+
+  if (cipher) document.getElementById("cipher").value = cipher;
+  if (method) document.getElementById("method").value = method;
+});
+</script>
+
+<script>
+/* 🔑 KEY INPUT KONTROL */
+document.getElementById("method").addEventListener("change", () => {
+  const keyInput = document.getElementById("key");
+  const method = document.getElementById("method").value;
+
+  if (method === "aes_lib" || method === "des_lib") {
+    keyInput.disabled = true;
+    keyInput.value = "";
+    keyInput.placeholder = "RSA ile otomatik çözülür";
+  } else {
+    keyInput.disabled = false;
+    keyInput.placeholder = "";
+  }
+});
+</script>
+
+<script>
+/* 🔓 DEŞİFRE */
+document.getElementById("decryptBtn").addEventListener("click", async () => {
+  const method = document.getElementById("method").value;
+  const cipher = document.getElementById("cipher").value.trim();
+  const key    = document.getElementById("key").value.trim();
+  const result = document.getElementById("result");
+
+  if (!cipher) {
+    result.value = "❌ Şifreli metin boş";
+    return;
+  }
+
+  let url = "";
+  let options = {};
+
+  /* ================= AES / DES + RSA ================= */
+  if (method === "aes_lib" || method === "des_lib") {
+    const encryptedKey = localStorage.getItem("encrypted_key");
+    if (!encryptedKey) {
+      result.value = "❌ RSA anahtarı bulunamadı";
+      return;
+    }
+
+    url = method === "aes_lib"
+      ? "/decrypt-aes-lib/"
+      : "/decrypt-des-rsa-text/";
+
+    options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ciphertext: cipher,
+        encrypted_key: encryptedKey
+      })
+    };
+  }
+
+  /* ================= MANUAL ================= */
+  else if (method === "aes_manual") {
+    url = "/receive-aes-manual-decrypt/";
+    options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cipher, key })
+    };
+  }
+
+  else if (method === "des_manual") {
+    url = "/receive-des-manual-decrypt/";
+    options = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cipher, key })
+    };
+  }
+
+  /* ================= CLASSIC CIPHERS ================= */
+  else {
+    const fd = new FormData();
+    fd.append("message", cipher);
+    if (key) fd.append("key", key);
+
+    if      (method === "caesar")       url = "/decrypt-api/";
+    else if (method === "vigenere")     url = "/vigenere/decrypt/";
+    else if (method === "affine")       url = "/affine/decrypt/";
+    else if (method === "substitution") url = "/substitution/decrypt/";
+    else if (method === "railfence")    url = "/railfence/decrypt/";
+    else if (method === "columnar")     url = "/columnar/decrypt/";
+    else if (method === "hill")         url = "/hill/decrypt/";
+    else if (method === "vernam")       url = "/vernam/decrypt/";
+    else {
+      result.value = "❌ Desteklenmeyen algoritma";
+      return;
+    }
+
+    options = { method: "POST", body: fd };
+  }
+
+  try {
+    const res  = await fetch(url, options);
+    const data = await res.json();
+
+    result.value =
+      data.plaintext ||
+      data.result ||
+      "❌ Deşifreleme başarısız";
+  }
+  catch (e) {
+    result.value = "❌ Sunucu hatası";
+    console.error(e);
+  }
+});
+</script>
+
+</body>
+</html>
